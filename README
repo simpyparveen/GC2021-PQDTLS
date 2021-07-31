@@ -1,55 +1,60 @@
-CONTENTS
+# GC2021-PQDTLS
 
-This library contains functions and structures that can help
-constructing a single-threaded UDP server with DTLS support in
-C99. The following components are available:
+Code and test applictions for the GlobeComm 2021 submitted paper: DTLS with Post-quantum Secure Source Authentication and Message Integrity
 
-* dtls
-  Basic support for DTLS with pre-shared key mode.
+The TinyDTLS library contains functions and structures that can help constructing a single-threaded UDP server with DTLS support in C99. The following components are available:
+* dtls: Basic support for DTLS with pre-shared key mode. This is a open-source library modified to accomodate TESLA prortocol. This version builds TESLA on existing DTLS open-source library, uses newly added SHA3 hash instead of SHA2 provided by tinyDTLS, along with time measurements of TESLA protocol. 
 
-* tests
-  The subdirectory tests contains test programs that show how each
-  component is used.
+* tests	: The subdirectory tests contains test programs that show how each component is used.
 
-BUILDING
+Newly introduced folders to the TinyDTLS library for this paper: 
+	* ReadySHA3-master: The subdirectory tests contains test programs that show how each component in SHA3 hash function implemenation are used. Ref: SHA-3 Spec:		    http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)
+	We use this implemetaion in function calls of modified TinyDTLS library.
+	* k2sn: The subdirectory tests contains test programs that show how each component in K2SN-MSS signature scheme is implemenation. We use this implemetaion in function calls of modified TinyDTLS library.	
+	
+	* tesla.h has neessary variable and functions declarations that are defined later in the TinyDTLS library while retrofitting TESLA.
 
-When using the code from the git repository, invoke make to build DTLS as a
-shared library.
+# BRANCHES
+	There are two branches for the implementation:
+	1. feature/dtls-tesla-ecdsa : DTLS retrofitted with TESLA using ECDSA signature scheme. This new modified library is initial non-PQ version of my paper's implementation. This code does not support fragmentation. 
+	2. feature/pq-dtls-tesla-k2snmss : DTLS retrofitted with PQ TESLA using K2SN-MSS signature scheme. This new modified library is the PQ version of my paper's implementation. In this branch we add fragmentation that was not originally in TinyDTLS. 
 
+# BUILDING
+	When using the code from the git repository, invoke make to build DTLS as a shared library.
+		Goto mainfolder Execute : $ make
+		Go to tests and execute : $ make
+		(NOTE: Clean the executables using make clean, whenever necssary.)
 
-
-//Changes to makefile
-
-We need to make changes in /test/makefile as follows to use PSK: 
-
-	CFLAGS  := -DLOG_LEVEL_DTLS=$(LOG_LEVEL_DTLS) -I. -I.. -I../$(DTLS_SUPPORT) 
+# Running
+We need to make changes in /test/makefile as follows to use PSK (if its not already changed): 
+  CFLAGS  := -DLOG_LEVEL_DTLS=$(LOG_LEVEL_DTLS) -I. -I.. -I../$(DTLS_SUPPORT) 
 	CFLAGS  := -DLOG_LEVEL_DTLS=$(LOG_LEVEL_DTLS) -I. -I.. -I../$(DTLS_SUPPORT) -i DTLS_PSK
 
+On terminal, to run server:-
+   $ ./dtls-server 
+On terminal, to run client:-
+	$ ./dtls-client 127.0.0.1 -i identity.txt -k pskkey.txt ($ ./dtls-client ServerIP -i ClientIdentity -k PreSharedKey )
 
-//Compilation(akefiless) :
-Goto mainfolder Execute : $ make
-Go to tests and execute : $ make
+## Keys and Identities
+	The PSK identities and keys are provided using files (identity.txt and pskkey.txt) on same location for testing purposes, application developers can use other more secure means.
+	The public key of the root of K2SN-MSS signature is stored in "publicKeyMSS.txt".
+
+Application data is hexdump stores in files of diffeerent size (f8bytes.txt/f16bytes.txt/f32bytes.txt, etc.) called in dtls-client.c using :
+		fopen("f8bytes.txt", "r");
 
 
-//Running :
 
-	On server run command:-
-		
-	$ ./dtls-server 
+## Run client several times to initiate connection to server via shell script
+  $ sh runtestclient.sh
+  
+## Run bash to extract relevant informatio from the std output
+  $ bash readtestfiles.sh
 
-	On client run command:-
-		
-	$ ./dtls-client 0.0.0.0
-	$ ./dtls-client Server-IP
+# Dependencies
+	POSIX compliant OS
+	Operating system with AVX2 instructions
+	Gcc Compiler
 
-/**********************************TESTING Purposes*****************/
-
-//On server run command:-
-		
-	$ ./dtls-server 
-
-//On client run command:-
-		
-	$ sh runtestclient.sh
-	$ bash readtestfiles.sh
+# Contact
+Please create an issue or email to simpy.parveen1@ucalgary.ca should you have any questions, comments or suggestions.
 
