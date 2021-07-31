@@ -1,0 +1,10 @@
+### Changes made by Simpy
+
+- When running change number of signs in main.c to 10 instead of 100000.
+
+- Also, keygeneration() will change variable usr(no of messages to sign) : #define usr 16//1048576//2^h in file "merkle-tree.h"
+
+# Compile : gcc -m64 -mavx2 -O3 -fomit-frame-pointer -funroll-all-loops main.c
+
+
+#Run : ./a.out > result.txt

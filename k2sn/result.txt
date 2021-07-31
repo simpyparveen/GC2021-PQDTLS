@@ -1,0 +1,6 @@
+Initializing system seeds...
+Key Generation Phase...
+Key Generation Time for 10 iterations:: 0.076157s
+Signing Time for 1000000 iterations: 0.100842s
+Verify Time for 1000000 iterations: 0.006287s
+Verify 16-th message: 1
