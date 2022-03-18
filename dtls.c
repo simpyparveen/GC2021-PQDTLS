@@ -3039,17 +3039,75 @@ for(int i=0;i<K_len;i++) printf("%02x\t",peer->K[0][i]);  // printf("%hhu ",peer
 // uint8_t *p_temp = malloc(21368);//[22000];uint8_t * ss11 = malloc(8);
     uint8_t k_temp[8];
 //for(j=0;j<k2sn_msglen;j++) ms[j]=rand()%256;
-    ksnmss_sig *sig = malloc(sizeof(ksnmss_sig));
+    //TF
+    //ksnmss_sig *sig = malloc(sizeof(ksnmss_sig));
+    
     t1 = clock();
 //for(id=0;id<16;id++)//1000000
+//added by me
+    for (i = 0; i < XMSS_SIGNATURES; i++) {
+        printf("  - iteration #%d:\n", i);
 
-    ksnmss_sign(id, sha256hash, sig);
+        XMSS_SIGN(sk, sm, &smlen, m, XMSS_MLEN);
 
-    printf("\nsizeof ksnmss_sig %d \n", sizeof(ksnmss_sig));
+        if (smlen != params.sig_bytes + XMSS_MLEN) {
+            printf("  X smlen incorrect [%llu != %u]!\n",
+                   smlen, params.sig_bytes);
+            ret = -1;
+        }
+        else {
+            printf("    smlen as expected [%llu].\n", smlen);
+        }
+
+        /* Test if signature is valid. */
+        if (XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk)) {
+            printf("  X verification failed!\n");
+            ret = -1;
+        }
+        else {
+            printf("    verification succeeded.\n");
+        }
+
+        /* Test if the correct message was recovered. */
+        if (mlen != XMSS_MLEN) {
+            printf("  X mlen incorrect [%llu != %u]!\n", mlen, XMSS_MLEN);
+            ret = -1;
+        }
+        else {
+            printf("    mlen as expected [%llu].\n", mlen);
+        }
+        if (memcmp(m, mout, XMSS_MLEN)) {
+            printf("  X output message incorrect!\n");
+            ret = -1;
+        }
+        else {
+            printf("    output message as expected.\n");
+        }
+
+        /* Test if flipping bits invalidates the signature (it should). */
+
+        /* Flip the first bit of the message. Should invalidate. */
+        sm[smlen - 1] ^= 1;
+        if (!XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk)) {
+            printf("  X flipping a bit of m DID NOT invalidate signature!\n");
+            ret = -1;
+        }
+        else {
+            printf("    flipping a bit of m invalidates signature.\n");
+        }
+        sm[smlen - 1] ^= 1;
+    }
+
+//TF
+    //ksnmss_sign(id, sha256hash, sig);
+
+    //printf("\nsizeof ksnmss_sig %d \n", sizeof(ksnmss_sig));
 
 //memcpy(p_temp,sig.id,4);
 // dtls_int_to_uint32(k_temp, sig.id);//sig.id=u32, k_temp=u8 //dtls_int_to_uint32(
-    dtls_int_to_uint64(k_temp, sig->id); //converts 4 bytes to 8
+    
+    //TF
+    //dtls_int_to_uint64(k_temp, sig->id); //converts 4 bytes to 8
 // memcpy(p_temp, k_temp, 8);
     memcpy(p, k_temp, 8);
 //p_temp += 8;
@@ -5707,7 +5765,31 @@ dtls_connect_peer(dtls_context_t *ctx, dtls_peer_t *peer) {
 
 //Testing by Simpy
     printf("\n Key Generation Phase by Client before CLIENT_HELLO...\n");
-    key_generation(system_seed, system_iv);
+
+    xmss_params params;
+    uint32_t oid;
+    int ret = 0;
+    int i;
+
+    // TODO test more different variants
+    XMSS_STR_TO_OID(&oid, XMSS_VARIANT);
+    XMSS_PARSE_OID(&params, oid);
+
+    unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
+    unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
+    unsigned char *m = malloc(XMSS_MLEN);
+    unsigned char *sm = malloc(params.sig_bytes + XMSS_MLEN);
+    unsigned char *mout = malloc(params.sig_bytes + XMSS_MLEN);
+    unsigned long long smlen;
+    unsigned long long mlen;
+
+    randombytes(m, XMSS_MLEN);
+
+    XMSS_KEYPAIR(pk, sk, oid);
+    // removing k2sn key generation
+
+    // key_generation(system_seed, system_iv);
+
     printf("\n Public key is MSSPK.key of length (%d) :\t", pklen); //
     pn(MSSPK.key); //u8[72]
 
